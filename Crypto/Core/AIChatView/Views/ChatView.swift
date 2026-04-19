@@ -10,36 +10,28 @@ import SwiftUI
 struct ChatView: View {
     @StateObject var vm = ChatViewModel()
     @State private var text = ""
+    @Environment(\.dismiss) var dismiss
     let systemMessage = ChatMessage(
         role: "system",
         content: "You are a crypto assistant. Answer only crypto-related questions clearly and concisely."
     )
     
     var body: some View {
-        
         VStack {
-        
             ScrollViewReader { proxy in
                 ScrollView {
-                    
                     if vm.messages.isEmpty {
                         Text("No messages yet. Start the conversation!")
                             .foregroundColor(.gray)
                             .padding()
                     } else {
-                        
                         bubbleMessageView
                             .padding(.horizontal)
                             .padding(.vertical, 4)
-                        
-                        
-                        
-                        
                     }
                 }
             
                 .onChange(of: vm.messages.count) {_, _ in
-                    
                     if let last = vm.messages.last {
                         withAnimation {
                             proxy.scrollTo(last.id, anchor: .bottom)
@@ -76,6 +68,11 @@ struct ChatView: View {
         }
         .navigationTitle("Cryptio Assistant")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(content: {
+            ToolbarItem(placement: .topBarLeading) {
+                XMarkButton(dismiss: _dismiss)
+            }
+        })
     }
     private func sendSuggestion(_ text: String) {
         vm.send(text)

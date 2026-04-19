@@ -7,7 +7,7 @@
 
 import Foundation
 struct CandleModel: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let date: Date
     let open: Double
     let high: Double

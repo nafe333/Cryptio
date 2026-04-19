@@ -77,7 +77,11 @@ struct HomeView: View {
                        })
         )
         .overlay(
-            aiFloatingButton,
+            Group {
+                if !showPortfolio {
+                    aiFloatingButton
+                }
+            },
             alignment: .bottomTrailing
         )
     }

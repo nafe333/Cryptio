@@ -22,6 +22,8 @@ class HomeViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var sortOption: SortOption = .holdings
     @Published var trendingCoins: [Item] = []
+    @Published var isPortfolioLoaded = false
+    
     
     enum SortOption {
         case rank, rankReversed, holdings, holdingsReversed, price, priceReversed
