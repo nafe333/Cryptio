@@ -182,6 +182,7 @@ extension DetailView {
         case .line: return "Line"
         case .points: return "Points"
         case .volume: return "Volume"
+        case .candle: return "Candle"
         }
     }
     private var swipeableCharts: some View {
@@ -201,6 +202,9 @@ extension DetailView {
                 }
             }
             .tag(ChartType.volume)
+            
+            CandleChartView(candles: vm.candles)
+                .tag(ChartType.candle)
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .frame(height: 220)

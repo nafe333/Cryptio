@@ -8,11 +8,16 @@
 import SwiftUI
 
 struct RemoteImageView: View {
+    let urlString: String?
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        AsyncImage(url: URL(string: urlString ?? "")) { image in
+            image
+                .resizable()
+                .scaledToFit()
+        } placeholder: {
+            ProgressView()
+        }
     }
 }
 
-#Preview {
-    RemoteImageView()
-}

@@ -15,10 +15,13 @@ struct HomeView: View {
     @EnvironmentObject private var vm: HomeViewModel
     @State private var selectedCoin: CoinModel? = nil
     @State private var coinSelected: Bool = false
+    @State private var currentPage: Int = 0
+    @State private var showChat = false
+    private let itemsPerPage = 5
 
        //MARK: - UI
     var body: some View {
-        ZStack{
+        ZStack {
             Color.theme.background
                 .ignoresSafeArea()
                 .sheet(isPresented: $showPortfolioView, content: {
@@ -29,8 +32,10 @@ struct HomeView: View {
             VStack{
                 homeHeader
                 HomeStatsView(showPortfolio: $showPortfolio)
-                SearchBarView(searchText: $vm.searchText)
-                
+                VStack(spacing: 8){
+                    SearchBarView(searchText: $vm.searchText)
+                }
+                .padding(.vertical)
                 columnTitles
                 if !showPortfolio {
                     allCoinsList
@@ -38,20 +43,30 @@ struct HomeView: View {
                 } else {
                     ZStack {
                         if vm.portfolioCoins.isEmpty && vm.searchText.isEmpty {
-                            portfolioEmptyView
+                            
+                                portfolioEmptyView
+                            
                         } else {
-                            portfolioCoinsList
+                            VStack(spacing: 8){
+                                portfolioCoinsList
+                                Spacer()
+                                trendingCoinsList
+                                
+                            }
                         }
-                        
                     }
-                    
                         .transition(.move(edge: .trailing))
                 }
                 Spacer(minLength: 0)
             }
-            .sheet(isPresented: $showSettingsView, content: {
+            .sheet(isPresented: $showSettingsView) {
                 SettingsView()
-            })
+            }
+            .sheet(isPresented: $showChat) {
+                NavigationStack {
+                        ChatView()
+                    }
+            }
         }
         .background(
             // deprecated but wil be treated later on 
@@ -60,8 +75,10 @@ struct HomeView: View {
                        label: {
                            EmptyView()
                        })
-            
-            
+        )
+        .overlay(
+            aiFloatingButton,
+            alignment: .bottomTrailing
         )
     }
 }
@@ -204,7 +221,150 @@ extension HomeView {
         }
     }
     
+    private var trendingCoinsList: some View {
+        
+        VStack(alignment: .leading, spacing: 12) {
+            
+            Text("Trending")
+                .font(.headline)
+                .padding(.horizontal)
+            
+            ZStack {
+                
+                HStack(spacing: 16) {
+                    ForEach(pagedCoins) { coin in
+                        VStack(spacing: 6) {
+                            
+                            RemoteImageView(urlString: coin.small)
+                                .frame(width: 40, height: 40)
+                                .clipShape(Circle())
+                            
+                            Text(coin.symbol?.uppercased() ?? "")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .lineLimit(1)
+                            
+                            
+                            if let rank = coin.marketCapRank {
+                                Text("#\(rank)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(.horizontal, (currentPage > 0 || currentPage < totalPages - 1) ? 50 : 16)
+                if currentPage > 0 {
+                    HStack {
+                        Button {
+                            withAnimation {
+                                currentPage = max(currentPage - 1, 0)
+                            }
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .padding(8)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                }
+                
+                //  Next button
+                if currentPage < totalPages - 1 {
+                    HStack {
+                        Spacer()
+                        Button {
+                            withAnimation {
+                                currentPage = min(currentPage + 1, totalPages - 1)
+                            }
+                        } label: {
+                            Image(systemName: "chevron.right")
+                                .padding(8)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            }
+            
+            .mask(
+                HStack(spacing: 0) {
+                    
+                    //  Left fade
+                    if currentPage > 0 && totalPages > 0 {
+                        LinearGradient(
+                            colors: [.clear, .black],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: 40)
+                    } else {
+                        Color.black.frame(width: 0)
+                    }
+                    Color.black
+                    
+                    if currentPage < totalPages - 1 {
+                        LinearGradient(
+                            colors: [.black, .clear],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: 40)
+                    } else {
+                        Color.black.frame(width: 0)
+                    }
+                }
+            )
+        }
+        .onChange(of: vm.trendingCoins) { oldValue, newValue in
+            currentPage = 0
+        }
+    }
     
+    private var aiFloatingButton: some View {
+        Button {
+            showChat.toggle()
+            
+            
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(Color.blue)
+                    .frame(width: 56, height: 56)
+                    .shadow(radius: 5)
+                
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        }
+        .padding(.trailing, 20)
+        .padding(.bottom, 20)
+    }
+    
+    private var sortedCoins: [Item] {
+        vm.trendingCoins.sorted {
+            ($0.marketCapRank ?? Int.max) < ($1.marketCapRank ?? Int.max)
+        }
+    }
+
+    private var pagedCoins: [Item] {
+        guard !sortedCoins.isEmpty else { return [] }
+        
+        let safePage = min(max(currentPage, 0), totalPages - 1)
+        let start = safePage * itemsPerPage
+        let end = min(start + itemsPerPage, sortedCoins.count)
+        
+        return start < end ? Array(sortedCoins[start..<end]) : []
+    }
+
+    private var totalPages: Int {
+        (sortedCoins.count + itemsPerPage - 1) / itemsPerPage
+    }
     
     private func segue(coin: CoinModel) {
         selectedCoin = coin

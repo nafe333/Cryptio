@@ -11,4 +11,5 @@ enum ChartType: Int, CaseIterable {
     case line
     case points
     case volume
+    case candle
 }

@@ -11,6 +11,7 @@ import Combine
 class DetailViewModel: ObservableObject {
     private let coinDetailService: CoinDetailDataService
     private let coinDataChartService: CoinChartDataService
+    private let candleChartService: CandleChartDataService
     private var cancellables = Set<AnyCancellable>()
     @Published var coin: CoinModel
     @Published var overviewStatistics: [StatisticModel] = []
@@ -19,12 +20,13 @@ class DetailViewModel: ObservableObject {
     @Published var coinUrl: String? = nil
     @Published var redditUrl: String? = nil
     @Published var coinDataForChart: CoinChartData? = nil
-
+    @Published var candles: [CandleModel] = []
     
     init(coin: CoinModel) {
         self.coin = coin
         coinDetailService = CoinDetailDataService(coin: coin)
         coinDataChartService = CoinChartDataService(coin: coin)
+        candleChartService = CandleChartDataService(coin: coin)
         addSubscribers()
     }
     
@@ -51,7 +53,13 @@ class DetailViewModel: ObservableObject {
                 self?.coinDataForChart = returnedChartData
             }
             .store(in: &cancellables)
-
+        
+        candleChartService.$candles
+            .map { CandleModel.from($0) }
+            .sink { [weak self] returnedCandles in
+                self?.candles = returnedCandles
+            }
+            .store(in: &cancellables)
     }
     
     private func getStatistics(coinDetail: CoinDetailModel?, coinModel: CoinModel) -> (overview: [StatisticModel], additionals: [StatisticModel]){

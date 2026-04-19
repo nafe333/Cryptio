@@ -15,18 +15,20 @@ class HomeViewModel: ObservableObject {
     private let coinDataService = CoinDataService()
     private let marketDataService = MarketDataService()
     private let portfolioDataService = PortfolioDataService()
+    private let trendingService = TrendingCoinsService()
     private var cancellable = Set<AnyCancellable>()
     @Published var searchText: String = ""
     @Published var statistics: [StatisticModel] = []
     @Published var isLoading: Bool = false
     @Published var sortOption: SortOption = .holdings
+    @Published var trendingCoins: [Item] = []
     
     enum SortOption {
         case rank, rankReversed, holdings, holdingsReversed, price, priceReversed
     }
     
     init() {
-addSubscribers()
+        addSubscribers()
     }
     
        //MARK: - Behaviour
@@ -56,6 +58,12 @@ addSubscribers()
             .sink {[weak self] (returnedStats) in
                 self?.statistics = returnedStats
                 self?.isLoading = false
+            }
+            .store(in: &cancellable)
+        
+        trendingService.$trendingCoins
+            .sink { [weak self] coins in
+                self?.trendingCoins = coins
             }
             .store(in: &cancellable)
 
