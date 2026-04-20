@@ -1,4 +1,4 @@
-# Crypto App 📊
+# Cryptio App 📊
 
 This is a SwiftUI-based iOS app built using the MVVM architecture. It focuses on displaying real-time cryptocurrency data using the CoinGecko API and includes an AI chatbot feature using OpenRouter.
 
